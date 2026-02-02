@@ -10,6 +10,14 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 
+  <!-- Post-processing for DoF -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/BokehShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/BokehPass.js"></script>
+
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{
@@ -57,13 +65,12 @@
     body.viewfinder .vf-frame{opacity:1;}
 
     /* ---------- Viewfinder overlays ---------- */
-    #vignette,#grain,#dofBlur{
+    #vignette,#grain{
       position:fixed;inset:0;z-index:95;pointer-events:none;
       display:none;
     }
     body.viewfinder #vignette,
-    body.viewfinder #grain,
-    body.viewfinder #dofBlur{display:block;}
+    body.viewfinder #grain{display:block;}
 
     #vignette{
       background:radial-gradient(circle at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.6) 100%);
@@ -72,38 +79,6 @@
     #grain{
       background-repeat:repeat;background-size:180px 180px;
       opacity:0;mix-blend-mode:overlay;filter:blur(0.25px);
-    }
-
-    /* ---- Better DOF feel: masked backdrop blur (center sharp-ish, edges blur) ----
-       We drive these CSS vars from JS:
-       --dof-blur:   blur amount in px
-       --dof-r1:     inner (sharp) radius %
-       --dof-r2:     feather outer radius %
-       --dof-opacity opacity multiplier
-    */
-    #dofBlur{
-      --dof-blur: 0px;
-      --dof-r1: 38%;
-      --dof-r2: 52%;
-      --dof-opacity: 0.0;
-
-      backdrop-filter: blur(var(--dof-blur));
-      -webkit-backdrop-filter: blur(var(--dof-blur));
-
-      /* Mask so blur applies mostly OUTSIDE center */
-      -webkit-mask-image: radial-gradient(circle at 50% 45%,
-        rgba(0,0,0,0) 0%,
-        rgba(0,0,0,0) var(--dof-r1),
-        rgba(0,0,0,1) var(--dof-r2),
-        rgba(0,0,0,1) 100%);
-      mask-image: radial-gradient(circle at 50% 45%,
-        rgba(0,0,0,0) 0%,
-        rgba(0,0,0,0) var(--dof-r1),
-        rgba(0,0,0,1) var(--dof-r2),
-        rgba(0,0,0,1) 100%);
-
-      opacity: var(--dof-opacity);
-      transition: opacity 120ms linear;
     }
 
     /* ---------- Viewfinder HUD (glowing yellow, rectangular) ---------- */
@@ -330,7 +305,6 @@
   <div class="vf-frame"></div>
   <div id="vignette"></div>
   <div id="grain"></div>
-  <div id="dofBlur"></div>
 
   <!-- Viewfinder HUD -->
   <div class="vf-hud">
@@ -616,6 +590,7 @@
       initCameras();
       initControls();
       initScene();
+      initPostProcessing();
       initLighting();
       initSubject();
       initUI();
@@ -636,7 +611,26 @@
       APP.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       APP.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       APP.renderer.toneMappingExposure = 1.0;
+      APP.renderer.autoClear = false;
       document.body.insertBefore(APP.renderer.domElement, document.body.firstChild);
+    }
+
+    function initPostProcessing(){
+      APP.composer = new THREE.EffectComposer(APP.renderer);
+      APP.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      APP.renderPass = new THREE.RenderPass(APP.scene, APP.studioCamera);
+      APP.composer.addPass(APP.renderPass);
+
+      APP.bokehPass = new THREE.BokehPass(APP.scene, APP.studioCamera, {
+        focus: 1.0,
+        aperture: 0.025,
+        maxblur: 0.015,
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+      APP.bokehPass.enabled = false;
+      APP.composer.addPass(APP.bokehPass);
     }
 
     function initCameras(){
@@ -776,6 +770,17 @@
     function setMode(m){
       if (APP.mode === m) return;
       APP.mode = m;
+
+      const cam = (m === 'viewfinder') ? APP.viewCamera : APP.studioCamera;
+      if (APP.renderPass) APP.renderPass.camera = cam;
+      if (APP.bokehPass) {
+        APP.bokehPass.camera = cam;
+        APP.bokehPass.enabled = (m === 'viewfinder');
+        if (m === 'viewfinder'){
+          APP.bokehPass.uniforms.nearClip.value = cam.near;
+          APP.bokehPass.uniforms.farClip.value = cam.far;
+        }
+      }
 
       if (m === 'viewfinder'){
         document.body.classList.add('viewfinder');
@@ -1313,36 +1318,7 @@
         }
       }
 
-      // ---- Better DOF tuning (masked blur + aperture + focus mismatch) ----
-      const dofEl = document.getElementById('dofBlur');
-      if (dofEl){
-        if (APP.mode === 'viewfinder'){
-          const subjDist = getSubjectDistanceMeters();
-          const mismatch = Math.min(12, Math.abs(APP.focusDist - subjDist));
-
-          // base blur from aperture (smaller f => stronger blur)
-          const apNorm = clamp((2.8 / f), 0.10, 1.60);
-
-          // blur increases if you are off-focus
-          const blurPx = clamp((apNorm * 5.2) + (mismatch * 0.45), 0.0, 10.0);
-
-          // sharp center radius: closer focus + wider aperture => smaller sharp region
-          const focusNorm = clamp((APP.focusDist - 0.6) / (25 - 0.6), 0, 1); // 0 near, 1 far
-          const r1 = clamp(48 - (apNorm * 10) - ((1-focusNorm) * 8) - (mismatch * 1.1), 18, 52); // %
-          const r2 = clamp(r1 + 14 + (apNorm * 3), 30, 72); // %
-
-          // opacity: only if blur is meaningful
-          const op = clamp((blurPx / 10) * 0.60, 0.0, 0.60);
-
-          dofEl.style.setProperty('--dof-blur', `${blurPx.toFixed(2)}px`);
-          dofEl.style.setProperty('--dof-r1', `${r1.toFixed(1)}%`);
-          dofEl.style.setProperty('--dof-r2', `${r2.toFixed(1)}%`);
-          dofEl.style.setProperty('--dof-opacity', op.toFixed(3));
-        } else {
-          dofEl.style.setProperty('--dof-blur', `0px`);
-          dofEl.style.setProperty('--dof-opacity', `0.0`);
-        }
-      }
+      updateDoF();
 
       // studio lights scale with exposure + widget intensity/color
       APP.studioLights.forEach(L=>{
@@ -1351,6 +1327,14 @@
         L.spotlight.intensity = Math.max(0.0, L.baseIntensity * exposure * mult);
         if (L.userColor) L.spotlight.color.set(L.userColor);
       });
+    }
+
+    function updateDoF(){
+      if (!APP.bokehPass) return;
+      APP.bokehPass.uniforms.focus.value = APP.focusDist;
+      const f = APP.apertureValues[APP.apertureIndex];
+      APP.bokehPass.uniforms.aperture.value = 0.015 / f;
+      APP.bokehPass.uniforms.maxblur.value = 0.015;
     }
 
     function toggleFlash(){
@@ -1566,6 +1550,7 @@
     function handleResize(){
       const w = window.innerWidth, h = window.innerHeight;
       APP.renderer.setSize(w,h);
+      if (APP.composer) APP.composer.setSize(w,h);
 
       APP.studioCamera.aspect = w/h;
       APP.studioCamera.updateProjectionMatrix();
@@ -1624,8 +1609,9 @@
         APP.fps.last = now;
       }
 
-      const cam = (APP.mode === 'viewfinder') ? APP.viewCamera : APP.studioCamera;
-      APP.renderer.render(APP.scene, cam);
+      // const cam = (APP.mode === 'viewfinder') ? APP.viewCamera : APP.studioCamera;
+      // APP.renderer.render(APP.scene, cam);
+      APP.composer.render();
     }
 
     document.getElementById('close-gallery').addEventListener('click', ()=>closeModal('gallery'));
