@@ -43,7 +43,6 @@
       -webkit-background-clip:text;
       -webkit-text-fill-color:transparent;
       background-clip:text;
-      text-shadow:none;
     }
     .menu-subtitle{
       font-size:clamp(12px, 2vw, 16px);
@@ -90,11 +89,10 @@
       position:fixed;inset:0;z-index:100;
       pointer-events:none;
       opacity:0;
-      transition:opacity 0.6s ease-in 1.4s;
+      transition:opacity 0.6s ease-in;
     }
-    #editorUI.visible{
-      opacity:1;
-    }
+    #editorUI.visible{ opacity:1; }
+    #editorUI.hidden{ display:none !important; }
 
     .editor-topbar{
       position:absolute;top:0;left:0;right:0;
@@ -111,6 +109,7 @@
       letter-spacing:2px;text-transform:uppercase;
       color:rgba(255,255,255,0.7);
     }
+    .topbar-right{ display:flex;align-items:center;gap:10px; }
     .topbar-mode{
       font-size:11px;font-weight:600;
       letter-spacing:1.5px;text-transform:uppercase;
@@ -120,6 +119,21 @@
       color:#68ccff;
       border:1px solid rgba(100,200,255,0.2);
     }
+
+    /* Camera icon button */
+    .btn-camera{
+      width:38px;height:38px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.15);
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .15s, transform .1s;
+      pointer-events:auto;
+    }
+    .btn-camera:hover{ background:rgba(255,255,255,0.12); }
+    .btn-camera:active{ transform:scale(0.92); }
+    .btn-camera svg{ width:18px;height:18px; }
 
     /* Side panel */
     .editor-panel{
@@ -147,9 +161,7 @@
       cursor:pointer;
       transition:background .15s, border-color .15s;
     }
-    .object-item:hover{
-      background:rgba(255,255,255,0.06);
-    }
+    .object-item:hover{ background:rgba(255,255,255,0.06); }
     .object-item.selected{
       background:rgba(100,200,255,0.08);
       border-color:rgba(100,200,255,0.3);
@@ -160,25 +172,16 @@
       display:flex;align-items:center;justify-content:center;
       font-size:16px;
     }
-    .object-icon.statue{
-      background:rgba(180,160,140,0.2);
-      color:#c8b8a8;
-    }
-    .object-icon.light{
-      background:rgba(255,220,80,0.15);
-      color:#ffd84a;
-    }
-    .object-label{
-      font-size:12px;font-weight:600;
-      color:rgba(255,255,255,0.8);
-    }
+    .object-icon.statue{ background:rgba(180,160,140,0.2);color:#c8b8a8; }
+    .object-icon.light{ background:rgba(255,220,80,0.15);color:#ffd84a; }
+    .object-label{ font-size:12px;font-weight:600;color:rgba(255,255,255,0.8); }
     .object-pos{
       font-size:9px;font-weight:500;
       color:rgba(255,255,255,0.3);
       font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     }
 
-    /* Bottom hint bar */
+    /* Rotate hint */
     .editor-hint{
       position:absolute;bottom:16px;left:50%;
       transform:translateX(-50%);
@@ -193,8 +196,6 @@
       pointer-events:auto;
       white-space:nowrap;
     }
-
-    /* Grid label */
     .grid-label{
       position:absolute;bottom:16px;left:16px;
       font-size:10px;font-weight:600;
@@ -203,7 +204,7 @@
       pointer-events:none;
     }
 
-    /* Selection ring rendered in CSS on top of canvas */
+    /* Selection ring */
     #selectionRing{
       position:fixed;z-index:90;
       pointer-events:none;
@@ -211,9 +212,7 @@
       border-radius:50%;
       box-shadow:0 0 12px rgba(100,200,255,0.2), inset 0 0 8px rgba(100,200,255,0.1);
       display:none;
-      transition:width .1s, height .1s;
     }
-
     /* Light cone glow */
     #lightConeGlow{
       position:fixed;z-index:85;
@@ -221,6 +220,255 @@
       border-radius:50%;
       background:radial-gradient(circle, rgba(255,220,80,0.12) 0%, rgba(255,220,80,0) 70%);
       display:none;
+    }
+
+    /* ========== CAMERA / VIEWFINDER UI ========== */
+    #cameraUI{
+      position:fixed;inset:0;z-index:200;
+      pointer-events:none;
+      opacity:0;
+      transition:opacity 0.4s ease-in;
+      display:none;
+    }
+    #cameraUI.visible{ display:block;opacity:1; }
+
+    /* Black camera frame border */
+    .cam-frame{
+      position:absolute;inset:0;
+      border:28px solid #0a0a0a;
+      pointer-events:none;
+    }
+    .cam-frame-inner{
+      position:absolute;inset:28px;
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Top camera bar */
+    .cam-topbar{
+      position:absolute;top:0;left:0;right:0;
+      height:28px;
+      background:#0a0a0a;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 36px;
+      z-index:10;
+    }
+    .cam-readout{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:10px;font-weight:600;
+      letter-spacing:0.8px;
+      color:#e84040;
+    }
+    .cam-readout.green{ color:#40e870; }
+    .cam-readout.amber{ color:#ffa830; }
+
+    /* Bottom camera bar */
+    .cam-bottombar{
+      position:absolute;bottom:0;left:0;right:0;
+      height:28px;
+      background:#0a0a0a;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 36px;
+      z-index:10;
+    }
+
+    /* Center crosshair / focus brackets */
+    .cam-focus{
+      position:absolute;
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:80px;height:80px;
+      pointer-events:none;
+    }
+    .cam-focus-corner{
+      position:absolute;
+      width:16px;height:16px;
+      border-color:rgba(255,255,255,0.55);
+      border-style:solid;
+    }
+    .cam-focus-corner.tl{ top:0;left:0;border-width:2px 0 0 2px; }
+    .cam-focus-corner.tr{ top:0;right:0;border-width:2px 2px 0 0; }
+    .cam-focus-corner.bl{ bottom:0;left:0;border-width:0 0 2px 2px; }
+    .cam-focus-corner.br{ bottom:0;right:0;border-width:0 2px 2px 0; }
+
+    /* Center dot */
+    .cam-center-dot{
+      position:absolute;top:50%;left:50%;
+      width:4px;height:4px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.4);
+      transform:translate(-50%,-50%);
+    }
+
+    /* Rule of thirds grid */
+    .cam-grid{
+      position:absolute;
+      inset:28px;
+      pointer-events:none;
+    }
+    .cam-grid-line{
+      position:absolute;
+      background:rgba(255,255,255,0.06);
+    }
+    .cam-grid-line.h{ left:28px;right:28px;height:1px; }
+    .cam-grid-line.v{ top:28px;bottom:28px;width:1px; }
+    .cam-grid-line.h1{ top:33.33%; }
+    .cam-grid-line.h2{ top:66.66%; }
+    .cam-grid-line.v1{ left:33.33%; }
+    .cam-grid-line.v2{ left:66.66%; }
+
+    /* HUD readouts (left side) */
+    .cam-hud-left{
+      position:absolute;
+      top:40px;left:38px;
+      display:flex;flex-direction:column;gap:6px;
+      pointer-events:none;
+    }
+    .cam-hud-item{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:11px;font-weight:600;
+      letter-spacing:0.5px;
+      color:rgba(255,255,255,0.55);
+      text-shadow:0 0 6px rgba(0,0,0,0.8);
+    }
+    .cam-hud-item .val{ color:#fff; }
+
+    /* HUD readouts (right side) */
+    .cam-hud-right{
+      position:absolute;
+      top:40px;right:38px;
+      display:flex;flex-direction:column;gap:6px;
+      align-items:flex-end;
+      pointer-events:none;
+    }
+
+    /* Level indicator */
+    .cam-level{
+      position:absolute;
+      top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:160px;height:1px;
+      background:rgba(255,255,255,0.15);
+      pointer-events:none;
+    }
+    .cam-level-tick{
+      position:absolute;top:-3px;
+      width:1px;height:7px;
+      background:rgba(255,255,255,0.25);
+    }
+    .cam-level-center{
+      position:absolute;top:-4px;left:50%;
+      width:2px;height:9px;
+      background:#40e870;
+      transform:translateX(-50%);
+    }
+
+    /* Edit mode button (inside camera view) */
+    .btn-edit-mode{
+      position:absolute;top:38px;right:38px;
+      padding:8px 16px;
+      border-radius:20px;
+      background:rgba(0,0,0,0.7);
+      border:1px solid rgba(255,255,255,0.2);
+      color:rgba(255,255,255,0.8);
+      font-size:11px;font-weight:700;
+      letter-spacing:1.5px;text-transform:uppercase;
+      cursor:pointer;
+      pointer-events:auto;
+      transition:background .15s, transform .1s;
+    }
+    .btn-edit-mode:hover{ background:rgba(255,255,255,0.12); }
+    .btn-edit-mode:active{ transform:scale(0.94); }
+
+    /* Shutter button */
+    .cam-shutter-wrap{
+      position:absolute;bottom:46px;left:50%;
+      transform:translateX(-50%);
+      pointer-events:auto;
+    }
+    .cam-shutter{
+      width:68px;height:68px;
+      border-radius:50%;
+      background:transparent;
+      border:4px solid rgba(255,255,255,0.8);
+      cursor:pointer;
+      position:relative;
+      transition:transform .08s;
+    }
+    .cam-shutter:active{ transform:scale(0.92); }
+    .cam-shutter-inner{
+      position:absolute;
+      inset:4px;
+      border-radius:50%;
+      background:rgba(255,255,255,0.9);
+      transition:background .08s;
+    }
+    .cam-shutter:active .cam-shutter-inner{
+      background:rgba(200,200,200,0.95);
+    }
+
+    /* Flash overlay */
+    #flashOverlay{
+      position:fixed;inset:0;z-index:300;
+      background:#fff;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.06s linear;
+    }
+    #flashOverlay.flash{
+      opacity:0.85;
+      transition:opacity 0.02s linear;
+    }
+
+    /* Vignette */
+    .cam-vignette{
+      position:absolute;inset:28px;
+      background:radial-gradient(circle at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.45) 100%);
+      pointer-events:none;
+    }
+
+    /* Exposure meter bar (bottom-left) */
+    .cam-meter{
+      position:absolute;bottom:46px;left:38px;
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+      pointer-events:none;
+    }
+    .cam-meter-bar{
+      width:4px;height:80px;
+      background:rgba(255,255,255,0.08);
+      border-radius:2px;
+      position:relative;
+      overflow:hidden;
+    }
+    .cam-meter-fill{
+      position:absolute;bottom:0;left:0;right:0;
+      height:55%;
+      background:linear-gradient(to top, #40e870, #ffa830);
+      border-radius:2px;
+    }
+    .cam-meter-label{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:8px;font-weight:700;
+      color:rgba(255,255,255,0.35);
+      letter-spacing:1px;
+    }
+
+    /* Frame counter (bottom-right) */
+    .cam-frame-counter{
+      position:absolute;bottom:60px;right:38px;
+      display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+      pointer-events:none;
+    }
+    .cam-frame-num{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:22px;font-weight:700;
+      color:rgba(255,255,255,0.5);
+      letter-spacing:1px;
+    }
+    .cam-frame-label{
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+      font-size:8px;font-weight:600;
+      color:rgba(255,255,255,0.25);
+      letter-spacing:1.5px;
     }
   </style>
 </head>
@@ -238,7 +486,15 @@
 <div id="editorUI">
   <div class="editor-topbar">
     <span class="topbar-title">The Set</span>
-    <span class="topbar-mode">Editor Mode</span>
+    <div class="topbar-right">
+      <span class="topbar-mode">Editor Mode</span>
+      <button class="btn-camera" id="btnCameraMode" title="Camera View">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="editor-panel">
@@ -259,32 +515,122 @@
     </div>
   </div>
 
-  <div class="editor-hint">Tap &amp; drag objects to reposition</div>
+  <div class="editor-hint">Drag to move &middot; Tap to rotate 45&deg;</div>
   <div class="grid-label">Top-Down View</div>
 </div>
 
 <div id="selectionRing"></div>
 <div id="lightConeGlow"></div>
 
+<!-- ===== CAMERA / VIEWFINDER UI ===== -->
+<div id="cameraUI">
+  <!-- Black frame border -->
+  <div class="cam-frame"></div>
+  <div class="cam-frame-inner"></div>
+
+  <!-- Top bar -->
+  <div class="cam-topbar">
+    <span class="cam-readout" id="camRecDot">&#9679; REC</span>
+    <span class="cam-readout green" id="camBattery">&#9608;&#9608;&#9608; 87%</span>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="cam-bottombar">
+    <span class="cam-readout amber" id="camFocal">50mm</span>
+    <span class="cam-readout" style="color:rgba(255,255,255,0.4);">THE SET</span>
+    <span class="cam-readout amber" id="camMode">M</span>
+  </div>
+
+  <!-- Rule of thirds grid -->
+  <div class="cam-grid">
+    <div class="cam-grid-line h h1"></div>
+    <div class="cam-grid-line h h2"></div>
+    <div class="cam-grid-line v v1"></div>
+    <div class="cam-grid-line v v2"></div>
+  </div>
+
+  <!-- Focus brackets -->
+  <div class="cam-focus">
+    <div class="cam-focus-corner tl"></div>
+    <div class="cam-focus-corner tr"></div>
+    <div class="cam-focus-corner bl"></div>
+    <div class="cam-focus-corner br"></div>
+    <div class="cam-center-dot"></div>
+  </div>
+
+  <!-- Level indicator -->
+  <div class="cam-level">
+    <div class="cam-level-tick" style="left:0"></div>
+    <div class="cam-level-tick" style="left:25%"></div>
+    <div class="cam-level-center"></div>
+    <div class="cam-level-tick" style="left:75%"></div>
+    <div class="cam-level-tick" style="left:100%"></div>
+  </div>
+
+  <!-- HUD left -->
+  <div class="cam-hud-left">
+    <div class="cam-hud-item">ISO <span class="val">400</span></div>
+    <div class="cam-hud-item">f/<span class="val">2.8</span></div>
+    <div class="cam-hud-item">1/<span class="val">125</span></div>
+    <div class="cam-hud-item" style="color:rgba(255,180,40,0.6)">AWB</div>
+  </div>
+
+  <!-- Vignette -->
+  <div class="cam-vignette"></div>
+
+  <!-- Exposure meter -->
+  <div class="cam-meter">
+    <div class="cam-meter-bar"><div class="cam-meter-fill"></div></div>
+    <div class="cam-meter-label">EV</div>
+  </div>
+
+  <!-- Frame counter -->
+  <div class="cam-frame-counter">
+    <div class="cam-frame-num" id="camFrameNum">001</div>
+    <div class="cam-frame-label">FRAMES</div>
+  </div>
+
+  <!-- Edit mode button -->
+  <button class="btn-edit-mode" id="btnEditMode">Edit Mode</button>
+
+  <!-- Shutter button -->
+  <div class="cam-shutter-wrap">
+    <div class="cam-shutter" id="btnShutter">
+      <div class="cam-shutter-inner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Flash overlay -->
+<div id="flashOverlay"></div>
+
 <script>
 /* =========================================================
-   THE SET – Studio Editor (Top-Down)
-   Main menu → fade → top-down studio with draggable objects
+   THE SET – Studio Editor + Camera Viewfinder
    ========================================================= */
 
-// ── Menu Logic ──────────────────────────────────────────
-const mainMenu  = document.getElementById('mainMenu');
-const editorUI  = document.getElementById('editorUI');
-const btnPlay   = document.getElementById('btnPlay');
-const btnExit   = document.getElementById('btnExit');
+// ── DOM refs ────────────────────────────────────────────
+const mainMenu     = document.getElementById('mainMenu');
+const editorUI     = document.getElementById('editorUI');
+const cameraUI     = document.getElementById('cameraUI');
+const flashOverlay = document.getElementById('flashOverlay');
+const btnPlay      = document.getElementById('btnPlay');
+const btnExit      = document.getElementById('btnExit');
+const btnCameraMode= document.getElementById('btnCameraMode');
+const btnEditMode  = document.getElementById('btnEditMode');
+const btnShutter   = document.getElementById('btnShutter');
+const selectionRing= document.getElementById('selectionRing');
+const lightConeGlow= document.getElementById('lightConeGlow');
 
 let editorStarted = false;
+let currentMode = 'editor'; // 'editor' | 'camera'
+let frameCount = 0;
 
+// ── Menu ────────────────────────────────────────────────
 btnPlay.addEventListener('click', () => {
   if (editorStarted) return;
   editorStarted = true;
   mainMenu.classList.add('fade-out');
-  // After the menu fades, remove it and show editor UI
   setTimeout(() => {
     mainMenu.style.display = 'none';
     editorUI.classList.add('visible');
@@ -293,43 +639,129 @@ btnPlay.addEventListener('click', () => {
 });
 
 btnExit.addEventListener('click', () => {
-  // Close the tab/window (only works if opened by script)
   if (window.close) window.close();
-  // Fallback: show a message
   mainMenu.querySelector('.menu-subtitle').textContent = 'You can close this tab.';
 });
 
-// ── Three.js Editor ─────────────────────────────────────
-let scene, camera, renderer;
-let studioFloor, studioWalls;
-let statueGroup, lightGroup;
+// ── Three.js globals ────────────────────────────────────
+let scene, renderer;
+let editCamera, perspCamera, activeCamera;
+let studioFloor, backdrop;
+let statueGroup, lightGroup, studioSpotLight;
 let raycaster, pointer;
-let dragging = null;      // which object is being dragged
+let dragging = null;
+let dragStartPos = null;
+let dragMoved = false;
 let dragOffset = new THREE.Vector3();
 let dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-let selected = 'statue';  // currently selected in UI
+let selected = 'statue';
+let draggables = [];
 
-const selectionRing = document.getElementById('selectionRing');
-const lightConeGlow = document.getElementById('lightConeGlow');
+// ── Procedural wooden floor texture ─────────────────────
+function createWoodTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
 
+  // Base warm wood color
+  ctx.fillStyle = '#8B6914';
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Wood planks
+  const plankH = 64;
+  for (let y = 0; y < 512; y += plankH) {
+    // Slight color variation per plank
+    const r = 110 + Math.random() * 40;
+    const g = 75 + Math.random() * 30;
+    const b = 15 + Math.random() * 20;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(0, y, 512, plankH - 1);
+
+    // Grain lines
+    for (let i = 0; i < 8; i++) {
+      const gy = y + Math.random() * plankH;
+      ctx.strokeStyle = `rgba(${60+Math.random()*30},${40+Math.random()*20},${5+Math.random()*10},${0.15+Math.random()*0.2})`;
+      ctx.lineWidth = 0.5 + Math.random();
+      ctx.beginPath();
+      ctx.moveTo(0, gy);
+      // Wavy grain
+      for (let x = 0; x < 512; x += 20) {
+        ctx.lineTo(x, gy + Math.sin(x * 0.02 + i) * 2);
+      }
+      ctx.stroke();
+    }
+
+    // Plank gap line
+    ctx.fillStyle = 'rgba(40,25,5,0.5)';
+    ctx.fillRect(0, y + plankH - 1, 512, 1);
+  }
+
+  // Subtle noise
+  for (let i = 0; i < 6000; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const a = Math.random() * 0.06;
+    ctx.fillStyle = Math.random() > 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(3, 3);
+  return tex;
+}
+
+// ── Procedural backdrop texture ─────────────────────────
+function createBackdropTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // Soft gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0, '#c8c0b8');
+  grad.addColorStop(0.5, '#b8b0a8');
+  grad.addColorStop(1, '#a89888');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+
+  // Paper texture noise
+  for (let i = 0; i < 8000; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const a = Math.random() * 0.04;
+    ctx.fillStyle = Math.random() > 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  return new THREE.CanvasTexture(canvas);
+}
+
+// ── Init Editor ─────────────────────────────────────────
 function initEditor() {
-  // ── Scene ──
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x111118);
+  scene.fog = new THREE.Fog(0x111118, 18, 30);
 
-  // ── Camera (top-down orthographic) ──
+  // ── Edit camera (top-down orthographic) ──
   const aspect = window.innerWidth / window.innerHeight;
   const frustum = 8;
-  camera = new THREE.OrthographicCamera(
+  editCamera = new THREE.OrthographicCamera(
     -frustum * aspect, frustum * aspect,
-    frustum, -frustum,
-    0.1, 100
+    frustum, -frustum, 0.1, 100
   );
-  camera.position.set(0, 20, 0);
-  camera.lookAt(0, 0, 0);
+  editCamera.position.set(0, 20, 0);
+  editCamera.lookAt(0, 0, 0);
+
+  // ── Perspective camera (photographer POV) ──
+  perspCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
+  perspCamera.position.set(0, 2.5, 8);
+  perspCamera.lookAt(0, 1.2, 0);
+
+  activeCamera = editCamera;
 
   // ── Renderer ──
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -339,175 +771,222 @@ function initEditor() {
   document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
   // ── Lighting ──
-  const ambient = new THREE.AmbientLight(0x334455, 0.6);
+  const ambient = new THREE.AmbientLight(0x445566, 0.5);
   scene.add(ambient);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
-  dirLight.position.set(5, 15, 5);
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 0.25);
+  dirLight.position.set(5, 12, 5);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(1024, 1024);
   scene.add(dirLight);
 
-  // ── Studio Floor ──
+  // ── Wooden Floor ──
+  const woodTex = createWoodTexture();
   const floorGeo = new THREE.PlaneGeometry(14, 14);
   const floorMat = new THREE.MeshStandardMaterial({
-    color: 0x1c1c24,
-    roughness: 0.85,
-    metalness: 0.05
+    map: woodTex,
+    roughness: 0.7,
+    metalness: 0.05,
+    color: 0xddccaa
   });
   studioFloor = new THREE.Mesh(floorGeo, floorMat);
   studioFloor.rotation.x = -Math.PI / 2;
   studioFloor.receiveShadow = true;
   scene.add(studioFloor);
 
-  // ── Grid lines (subtle) ──
-  const gridSize = 14;
-  const gridDiv  = 14;
-  const gridHelper = new THREE.GridHelper(gridSize, gridDiv, 0x2a2a36, 0x1f1f2a);
+  // ── Grid overlay (subtle, editor only) ──
+  const gridHelper = new THREE.GridHelper(14, 14, 0x3a3530, 0x2d2820);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
-  // ── Studio Walls (top-down visible as edges) ──
-  const wallMat = new THREE.MeshStandardMaterial({
-    color: 0x252530,
-    roughness: 0.9,
-    metalness: 0.0
-  });
+  // ── Studio Walls ──
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a2a32, roughness: 0.92 });
 
-  // Back wall
-  const backWall = new THREE.Mesh(
-    new THREE.BoxGeometry(14, 3, 0.15),
-    wallMat
-  );
-  backWall.position.set(0, 1.5, -7);
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(14, 4, 0.15), wallMat);
+  backWall.position.set(0, 2, -7);
+  backWall.receiveShadow = true;
   scene.add(backWall);
 
-  // Left wall
-  const leftWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 3, 14),
-    wallMat
-  );
-  leftWall.position.set(-7, 1.5, 0);
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4, 14), wallMat);
+  leftWall.position.set(-7, 2, 0);
   scene.add(leftWall);
 
-  // Right wall
-  const rightWall = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 3, 14),
-    wallMat
-  );
-  rightWall.position.set(7, 1.5, 0);
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4, 14), wallMat);
+  rightWall.position.set(7, 2, 0);
   scene.add(rightWall);
+
+  // ── Studio Backdrop (curved seamless) ──
+  const bdTex = createBackdropTexture();
+  const bdMat = new THREE.MeshStandardMaterial({
+    map: bdTex,
+    roughness: 0.85,
+    metalness: 0.0,
+    color: 0xc8c0b0,
+    side: THREE.DoubleSide
+  });
+
+  // Floor part of backdrop
+  const bdFloor = new THREE.Mesh(new THREE.PlaneGeometry(5, 4), bdMat);
+  bdFloor.rotation.x = -Math.PI / 2;
+  bdFloor.position.set(0, 0.02, -3.5);
+  bdFloor.receiveShadow = true;
+  scene.add(bdFloor);
+
+  // Curved part (quarter-circle sweep connecting floor to wall)
+  const curveSegs = 16;
+  const curveRadius = 1.5;
+  const curveGeo = new THREE.BufferGeometry();
+  const positions = [];
+  const normals = [];
+  const uvs = [];
+  const indices = [];
+  const bdWidth = 5;
+  const halfW = bdWidth / 2;
+
+  for (let i = 0; i <= curveSegs; i++) {
+    const t = i / curveSegs;
+    const angle = t * Math.PI / 2;
+    const z = -5.5 - Math.sin(angle) * curveRadius;
+    const y = (1 - Math.cos(angle)) * curveRadius;
+    const nz = -Math.sin(angle);
+    const ny = Math.cos(angle);
+
+    positions.push(-halfW, y, z, halfW, y, z);
+    normals.push(0, ny, nz, 0, ny, nz);
+    uvs.push(0, t, 1, t);
+
+    if (i < curveSegs) {
+      const row = i * 2;
+      indices.push(row, row+1, row+2, row+1, row+3, row+2);
+    }
+  }
+
+  curveGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  curveGeo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  curveGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  curveGeo.setIndex(indices);
+
+  const curvedBackdrop = new THREE.Mesh(curveGeo, bdMat);
+  curvedBackdrop.receiveShadow = true;
+  scene.add(curvedBackdrop);
+
+  // Flat upper wall part of backdrop
+  const bdWall = new THREE.Mesh(new THREE.PlaneGeometry(5, 2.5), bdMat);
+  const topOfCurve = curveRadius;
+  bdWall.position.set(0, topOfCurve + 1.25, -5.5 - curveRadius);
+  bdWall.receiveShadow = true;
+  scene.add(bdWall);
 
   // ── Statue (Subject) ──
   statueGroup = new THREE.Group();
   statueGroup.userData.type = 'statue';
 
-  // Base/pedestal
-  const baseMat = new THREE.MeshStandardMaterial({ color: 0x8a8078, roughness: 0.6, metalness: 0.1 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x8a8078, roughness: 0.55, metalness: 0.1 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xb0a898, roughness: 0.4, metalness: 0.05 });
+
+  // Pedestal
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.3, 24), baseMat);
-  base.position.y = 0.15;
-  base.castShadow = true;
+  base.position.y = 0.15; base.castShadow = true; base.receiveShadow = true;
   statueGroup.add(base);
 
-  // Body
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xb0a898, roughness: 0.45, metalness: 0.05 });
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.2, 16), bodyMat);
-  body.position.y = 0.9;
-  body.castShadow = true;
-  statueGroup.add(body);
+  // Lower body
+  const lowerBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.38, 1.0, 16), bodyMat);
+  lowerBody.position.y = 0.8; lowerBody.castShadow = true;
+  statueGroup.add(lowerBody);
 
   // Torso
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.28, 0.7, 16), bodyMat);
-  torso.position.y = 1.85;
-  torso.castShadow = true;
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.28, 0.75, 16), bodyMat);
+  torso.position.y = 1.68; torso.castShadow = true;
   statueGroup.add(torso);
 
+  // Neck
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.2, 12), bodyMat);
+  neck.position.y = 2.15; neck.castShadow = true;
+  statueGroup.add(neck);
+
   // Head
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), bodyMat);
-  head.position.y = 2.45;
-  head.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 16), bodyMat);
+  head.position.y = 2.45; head.castShadow = true;
   statueGroup.add(head);
 
-  statueGroup.position.set(0, 0, 0);
+  // Arms (left + right)
+  const armMat = new THREE.MeshStandardMaterial({ color: 0xa89888, roughness: 0.45, metalness: 0.05 });
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.8, 8), armMat);
+  armL.position.set(-0.42, 1.5, 0); armL.rotation.z = 0.2; armL.castShadow = true;
+  statueGroup.add(armL);
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.8, 8), armMat);
+  armR.position.set(0.42, 1.5, 0); armR.rotation.z = -0.2; armR.castShadow = true;
+  statueGroup.add(armR);
+
+  statueGroup.position.set(0, 0, -3);
   scene.add(statueGroup);
 
   // ── Studio Light ──
   lightGroup = new THREE.Group();
   lightGroup.userData.type = 'light';
 
-  // Stand pole
-  const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, metalness: 0.4 });
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 2.2, 8), poleMat);
-  pole.position.y = 1.1;
-  lightGroup.add(pole);
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.65, metalness: 0.45 });
 
-  // Stand base (tripod feet - 3 small boxes)
+  // Pole
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.4, 8), poleMat);
+  pole.position.y = 1.2; lightGroup.add(pole);
+
+  // Tripod feet
   for (let i = 0; i < 3; i++) {
     const angle = (i / 3) * Math.PI * 2;
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.04, 0.5),
-      poleMat
-    );
-    foot.position.set(Math.sin(angle) * 0.2, 0.02, Math.cos(angle) * 0.2);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.5), poleMat);
+    foot.position.set(Math.sin(angle) * 0.18, 0.015, Math.cos(angle) * 0.18);
     foot.rotation.y = angle;
     lightGroup.add(foot);
   }
 
-  // Light head (rectangular softbox shape)
-  const softboxMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5, metalness: 0.3 });
-  const softbox = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.12), softboxMat);
-  softbox.position.y = 2.3;
+  // Softbox head
+  const softboxMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.35 });
+  const softbox = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.55, 0.14), softboxMat);
+  softbox.position.y = 2.45; softbox.castShadow = true;
   lightGroup.add(softbox);
 
-  // Emissive face of the softbox
+  // Emissive face
   const emissiveMat = new THREE.MeshStandardMaterial({
-    color: 0xfff5e0,
-    emissive: 0xffd84a,
-    emissiveIntensity: 0.8,
-    roughness: 0.3
+    color: 0xfff8e8, emissive: 0xffd84a, emissiveIntensity: 0.8, roughness: 0.3
   });
-  const emissiveFace = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.4), emissiveMat);
-  emissiveFace.position.set(0, 2.3, 0.07);
+  const emissiveFace = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.45), emissiveMat);
+  emissiveFace.position.set(0, 2.45, 0.08);
   lightGroup.add(emissiveFace);
 
   // Actual spotlight
-  const spotLight = new THREE.SpotLight(0xffeedd, 1.5, 12, Math.PI / 5, 0.5, 1.5);
-  spotLight.position.set(0, 2.3, 0);
-  spotLight.target.position.set(0, 0, 0.5);
-  spotLight.castShadow = true;
-  spotLight.shadow.mapSize.set(512, 512);
-  lightGroup.add(spotLight);
-  lightGroup.add(spotLight.target);
+  studioSpotLight = new THREE.SpotLight(0xffeedd, 2.0, 14, Math.PI / 5, 0.5, 1.5);
+  studioSpotLight.position.set(0, 2.45, 0);
+  studioSpotLight.target.position.set(0, 0, 1);
+  studioSpotLight.castShadow = true;
+  studioSpotLight.shadow.mapSize.set(1024, 1024);
+  lightGroup.add(studioSpotLight);
+  lightGroup.add(studioSpotLight.target);
 
-  lightGroup.position.set(3, 0, -2);
+  lightGroup.position.set(3, 0, -3);
   scene.add(lightGroup);
 
-  // ── Interaction setup ──
+  // Point light toward statue
+  updateSpotlightTarget();
+
+  // ── Interaction ──
   raycaster = new THREE.Raycaster();
-  pointer   = new THREE.Vector2();
+  pointer = new THREE.Vector2();
+  draggables = [statueGroup, lightGroup];
 
-  // Draggable objects list
-  const draggables = [statueGroup, lightGroup];
-
-  // ── Pointer events ──
   const canvas = renderer.domElement;
 
   function getPointer(e) {
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    pointer.x =  ((clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-  }
-
-  function getPointerEnd(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-    pointer.x =  ((clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    pointer.x =  ((cx - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((cy - rect.top) / rect.height) * 2 + 1;
+    return { cx, cy };
   }
 
   function hitTest() {
-    raycaster.setFromCamera(pointer, camera);
+    raycaster.setFromCamera(pointer, activeCamera);
     for (const grp of draggables) {
       const hits = raycaster.intersectObjects(grp.children, true);
       if (hits.length > 0) return grp;
@@ -516,16 +995,18 @@ function initEditor() {
   }
 
   function onDown(e) {
+    if (currentMode !== 'editor') return;
     e.preventDefault();
-    getPointer(e);
+    const { cx, cy } = getPointer(e);
     const hit = hitTest();
     if (hit) {
       dragging = hit;
+      dragMoved = false;
+      dragStartPos = { x: cx, y: cy };
       selected = hit.userData.type;
       updateSelection();
 
-      // Calculate drag offset
-      raycaster.setFromCamera(pointer, camera);
+      raycaster.setFromCamera(pointer, activeCamera);
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(dragPlane, intersection);
       dragOffset.copy(hit.position).sub(intersection);
@@ -533,21 +1014,24 @@ function initEditor() {
   }
 
   function onMove(e) {
+    if (currentMode !== 'editor' || !dragging) return;
     e.preventDefault();
-    if (!dragging) return;
+    const { cx, cy } = getPointer(e);
 
-    if (e.touches) {
-      getPointer(e);
-    } else {
-      getPointer(e);
+    // Detect if we actually moved (vs just a tap)
+    if (dragStartPos) {
+      const dx = cx - dragStartPos.x;
+      const dy = cy - dragStartPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 6) dragMoved = true;
     }
 
-    raycaster.setFromCamera(pointer, camera);
+    if (!dragMoved) return;
+
+    raycaster.setFromCamera(pointer, activeCamera);
     const intersection = new THREE.Vector3();
     raycaster.ray.intersectPlane(dragPlane, intersection);
 
     const newPos = intersection.add(dragOffset);
-    // Clamp within studio bounds
     const limit = 6.2;
     newPos.x = Math.max(-limit, Math.min(limit, newPos.x));
     newPos.z = Math.max(-limit, Math.min(limit, newPos.z));
@@ -555,26 +1039,19 @@ function initEditor() {
     dragging.position.x = newPos.x;
     dragging.position.z = newPos.z;
 
-    // Update the spotlight target to face the statue if dragging the light
-    if (dragging.userData.type === 'light') {
-      const spotTarget = dragging.children.find(c => c.isObject3D && c.position && c === spotLight.target);
-      if (spotTarget) {
-        // Point roughly toward center/statue
-        const dir = new THREE.Vector3().subVectors(statueGroup.position, lightGroup.position).normalize();
-        spotTarget.position.set(dir.x * 2, 0, dir.z * 2);
-      }
-    }
-
+    updateSpotlightTarget();
     updatePositionLabels();
   }
 
   function onUp(e) {
-    if (e) {
-      if (e.changedTouches || e.type === 'mouseup') {
-        getPointerEnd(e);
-      }
+    if (currentMode !== 'editor') return;
+    if (dragging && !dragMoved) {
+      // It was a TAP — rotate the object 45 degrees
+      dragging.rotation.y += Math.PI / 4;
     }
     dragging = null;
+    dragStartPos = null;
+    dragMoved = false;
   }
 
   canvas.addEventListener('mousedown', onDown);
@@ -584,30 +1061,96 @@ function initEditor() {
   canvas.addEventListener('touchmove', onMove, { passive: false });
   canvas.addEventListener('touchend', onUp);
 
-  // ── UI panel click to select ──
+  // ── UI panel selection ──
   document.getElementById('itemStatue').addEventListener('click', () => {
-    selected = 'statue';
-    updateSelection();
+    selected = 'statue'; updateSelection();
   });
   document.getElementById('itemLight').addEventListener('click', () => {
-    selected = 'light';
-    updateSelection();
+    selected = 'light'; updateSelection();
   });
 
-  // ── Resize ──
+  // ── Mode switching ──
+  btnCameraMode.addEventListener('click', switchToCameraMode);
+  btnEditMode.addEventListener('click', switchToEditMode);
+  btnShutter.addEventListener('click', takePhoto);
+
   window.addEventListener('resize', onResize);
 
-  // ── Start render loop ──
   updateSelection();
   updatePositionLabels();
   animate();
 }
 
+// ── Spotlight always aims at statue ─────────────────────
+function updateSpotlightTarget() {
+  if (!studioSpotLight || !statueGroup || !lightGroup) return;
+  const dir = new THREE.Vector3().subVectors(statueGroup.position, lightGroup.position).normalize();
+  studioSpotLight.target.position.set(dir.x * 3, 0, dir.z * 3);
+}
+
+// ── Mode Switching ──────────────────────────────────────
+function switchToCameraMode() {
+  currentMode = 'camera';
+
+  // Position perspective camera behind/in front of subject
+  const statuePos = statueGroup.position;
+  perspCamera.position.set(statuePos.x, 2.5, statuePos.z + 8);
+  perspCamera.lookAt(statuePos.x, 1.2, statuePos.z);
+
+  activeCamera = perspCamera;
+
+  editorUI.classList.remove('visible');
+  selectionRing.style.display = 'none';
+  lightConeGlow.style.display = 'none';
+
+  setTimeout(() => {
+    cameraUI.classList.add('visible');
+  }, 100);
+
+  renderer.toneMappingExposure = 1.0;
+}
+
+function switchToEditMode() {
+  currentMode = 'editor';
+  activeCamera = editCamera;
+
+  cameraUI.classList.remove('visible');
+
+  setTimeout(() => {
+    editorUI.classList.add('visible');
+  }, 100);
+
+  renderer.toneMappingExposure = 1.2;
+}
+
+// ── Take Photo (shutter) ────────────────────────────────
+function takePhoto() {
+  frameCount++;
+  document.getElementById('camFrameNum').textContent =
+    String(frameCount).padStart(3, '0');
+
+  // Flash effect
+  flashOverlay.classList.add('flash');
+  setTimeout(() => {
+    flashOverlay.classList.remove('flash');
+    flashOverlay.style.opacity = '0';
+  }, 80);
+
+  // Save photo from canvas
+  setTimeout(() => {
+    try {
+      const link = document.createElement('a');
+      link.download = `the-set-${String(frameCount).padStart(3,'0')}.png`;
+      link.href = renderer.domElement.toDataURL('image/png');
+      link.click();
+    } catch(e) { /* silent */ }
+  }, 120);
+}
+
+// ── UI helpers ──────────────────────────────────────────
 function updateSelection() {
-  const itemStatue = document.getElementById('itemStatue');
-  const itemLight  = document.getElementById('itemLight');
-  itemStatue.classList.toggle('selected', selected === 'statue');
-  itemLight.classList.toggle('selected', selected === 'light');
+  document.getElementById('itemStatue').classList.toggle('selected', selected === 'statue');
+  document.getElementById('itemLight').classList.toggle('selected', selected === 'light');
 }
 
 function updatePositionLabels() {
@@ -619,9 +1162,8 @@ function updatePositionLabels() {
 }
 
 function projectToScreen(obj) {
-  const pos = new THREE.Vector3();
-  pos.copy(obj.position);
-  pos.project(camera);
+  const pos = obj.position.clone();
+  pos.project(activeCamera);
   return {
     x: ( pos.x * 0.5 + 0.5) * window.innerWidth,
     y: (-pos.y * 0.5 + 0.5) * window.innerHeight
@@ -629,15 +1171,16 @@ function projectToScreen(obj) {
 }
 
 function updateOverlays() {
-  if (!statueGroup || !lightGroup) return;
+  if (currentMode !== 'editor' || !statueGroup || !lightGroup) {
+    selectionRing.style.display = 'none';
+    lightConeGlow.style.display = 'none';
+    return;
+  }
 
-  // Selection ring on the selected object
   const target = selected === 'statue' ? statueGroup : lightGroup;
   const screen = projectToScreen(target);
-
-  // Approximate radius in screen px based on camera frustum
-  const frustumWidth = camera.right - camera.left;
-  const objRadius = selected === 'statue' ? 0.7 : 0.5;
+  const frustumWidth = editCamera.right - editCamera.left;
+  const objRadius = selected === 'statue' ? 0.75 : 0.55;
   const ringSize = (objRadius / frustumWidth) * window.innerWidth * 2;
 
   selectionRing.style.display = 'block';
@@ -646,7 +1189,6 @@ function updateOverlays() {
   selectionRing.style.left   = (screen.x - ringSize / 2) + 'px';
   selectionRing.style.top    = (screen.y - ringSize / 2) + 'px';
 
-  // Light cone glow
   const lightScreen = projectToScreen(lightGroup);
   const glowSize = (3.5 / frustumWidth) * window.innerWidth * 2;
   lightConeGlow.style.display = 'block';
@@ -656,32 +1198,55 @@ function updateOverlays() {
   lightConeGlow.style.top    = (lightScreen.y - glowSize / 2) + 'px';
 }
 
+// ── Resize ──────────────────────────────────────────────
 function onResize() {
-  if (!camera || !renderer) return;
-  const aspect = window.innerWidth / window.innerHeight;
+  if (!renderer) return;
+  const w = window.innerWidth, h = window.innerHeight;
+  const aspect = w / h;
+
+  // Edit camera
   const frustum = 8;
-  camera.left   = -frustum * aspect;
-  camera.right  =  frustum * aspect;
-  camera.top    =  frustum;
-  camera.bottom = -frustum;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  editCamera.left   = -frustum * aspect;
+  editCamera.right  =  frustum * aspect;
+  editCamera.top    =  frustum;
+  editCamera.bottom = -frustum;
+  editCamera.updateProjectionMatrix();
+
+  // Perspective camera
+  perspCamera.aspect = aspect;
+  perspCamera.updateProjectionMatrix();
+
+  renderer.setSize(w, h);
 }
 
+// ── Animate ─────────────────────────────────────────────
 function animate() {
   requestAnimationFrame(animate);
 
-  // Gently rotate the light emissive face brightness (pulsing)
+  const t = performance.now() * 0.001;
+
+  // Pulse light emissive
   if (lightGroup) {
-    const t = performance.now() * 0.001;
-    const emissiveFace = lightGroup.children[5]; // emissive plane
-    if (emissiveFace && emissiveFace.material) {
-      emissiveFace.material.emissiveIntensity = 0.6 + Math.sin(t * 2) * 0.2;
+    const emissive = lightGroup.children[5]; // emissive plane
+    if (emissive && emissive.material) {
+      emissive.material.emissiveIntensity = 0.65 + Math.sin(t * 2) * 0.2;
     }
   }
 
+  // Camera mode: subtle idle sway
+  if (currentMode === 'camera') {
+    perspCamera.position.x += Math.sin(t * 0.3) * 0.0004;
+    perspCamera.position.y += Math.cos(t * 0.4) * 0.0002;
+  }
+
+  // Blink REC dot
+  const recDot = document.getElementById('camRecDot');
+  if (recDot && currentMode === 'camera') {
+    recDot.style.opacity = Math.sin(t * 3) > 0 ? '1' : '0.2';
+  }
+
   updateOverlays();
-  renderer.render(scene, camera);
+  renderer.render(scene, activeCamera);
 }
 </script>
 </body>
